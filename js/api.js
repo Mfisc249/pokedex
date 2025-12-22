@@ -50,3 +50,14 @@ async function fetchEvolutionChainForPokemon(id) {
   evoCache.set(url, data);
   return data;
 }
+
+function extractEvolutionChain(chain) {
+  const evo = [];
+  let current = chain;
+
+  while (current) {
+    evo.push(current.species.name);
+    current = current.evolves_to[0];
+  }
+  return evo;
+}

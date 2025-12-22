@@ -19,14 +19,28 @@ function clearCards() {
   document.getElementById("cardGrid").innerHTML = "";
 }
 
-function openOverlay(pokemon, state) {
+async function openOverlay(pokemon, state) {
+  const species = await fetchSpecies(pokemon.id);
+  const evoData = await fetchEvolutionChainForPokemon(pokemon.id);
+
+  const evoChain = evoData
+    ? parseEvolutionChain(evoData.chain)
+    : [];
+
+  const html = overlayTemplate(
+    pokemon,
+    getCardBgClass(pokemon),
+    statsTemplate(pokemon),
+    aboutTemplate(pokemon),
+    evolutionTemplate(evoChain)
+  );
+
   const overlay = document.getElementById("overlay");
-  const statsHtml = statsTemplate(pokemon);
-  overlay.innerHTML = overlayTemplate(pokemon, getCardBgClass(pokemon), statsHtml);
+  overlay.innerHTML = html;
   overlay.classList.remove("hidden");
-  overlay.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+
   attachOverlayEvents(state);
+  initTabs();
 }
 
 function closeOverlay() {
@@ -59,15 +73,38 @@ async function showOverlayByIndex(index, state) {
   const safe = clamp(index, 0, state.loadedPokemon.length - 1);
   state.currentIndex = safe;
   const p = state.loadedPokemon[safe];
-  openOverlay(p, state);
-  await tryLoadEvoChain(p.id);
+  await openOverlay(p, state);
 }
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-async function tryLoadEvoChain(id) {
-  try { await fetchEvolutionChainForPokemon(id); }
-  catch { /* optional: ignore */ }
+function parseEvolutionChain(chain) {
+  const result = [];
+  let current = chain;
+  
+  while (current) {
+    const id = current.species.url.split("/").filter(Boolean).pop();
+    result.push({
+      name: current.species.name,
+      id: id
+    });
+    current = current.evolves_to[0];
+  }
+  
+  return result;
+}
+
+function initTabs() {
+  const tabs = document.querySelectorAll(".tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+
+      tab.classList.add("active");
+      document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+    });
+  });
 }
