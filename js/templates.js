@@ -1,8 +1,8 @@
-function pokemonCardTemplate(pokemon, bgColor) {
+function pokemonCardTemplate(pokemon, bgClass) {
   const types = pokemon.types.map(t => t.type.name);
   const img = getPokemonImage(pokemon);
   return `
-    <article class="card" data-id="${pokemon.id}" style="background:${bgColor}">
+    <article class="card ${bgClass}" data-id="${pokemon.id}">
       <div class="card-inner">
         <h2 class="card-title">${pokemon.name}</h2>
         <div class="types">${typePillsTemplate(types)}</div>
@@ -16,11 +16,11 @@ function typePillsTemplate(types) {
   return types.map(t => `<span class="type-pill">${t}</span>`).join("");
 }
 
-function overlayTemplate(pokemon, bgColor, statsHtml) {
+function overlayTemplate(pokemon, bgClass, statsHtml) {
   const types = pokemon.types.map(t => t.type.name);
   const img = getPokemonImage(pokemon);
   return `
-    <div class="modal" style="background:${bgColor}">
+    <div class="modal ${bgClass}">
       <button class="nav-arrow nav-left" data-nav="-1" aria-label="Previous">‹</button>
       <button class="nav-arrow nav-right" data-nav="1" aria-label="Next">›</button>
 

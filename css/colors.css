@@ -1,0 +1,19 @@
+/* Pokemon Type Background Colors */
+.bg-normal { background: #2a2f45; }
+.bg-fire { background: #3a1f1f; }
+.bg-water { background: #16263f; }
+.bg-electric { background: #3b3216; }
+.bg-grass { background: #16331f; }
+.bg-ice { background: #1c3540; }
+.bg-fighting { background: #3a1f2b; }
+.bg-poison { background: #2d1d3b; }
+.bg-ground { background: #3a2d1a; }
+.bg-flying { background: #1f2f3a; }
+.bg-psychic { background: #3a1a33; }
+.bg-bug { background: #26331a; }
+.bg-rock { background: #2f2b2b; }
+.bg-ghost { background: #211a33; }
+.bg-dragon { background: #1a2540; }
+.bg-dark { background: #1b1b1f; }
+.bg-steel { background: #2b3138; }
+.bg-fairy { background: #3a1a2b; }
