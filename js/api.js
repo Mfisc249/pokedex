@@ -51,13 +51,26 @@ async function fetchEvolutionChainForPokemon(id) {
   return data;
 }
 
-function extractEvolutionChain(chain) {
-  const evo = [];
-  let current = chain;
+function extractEvolutionPaths(chainNode) {
+  if (!chainNode || !chainNode.species) return [];
 
-  while (current) {
-    evo.push(current.species.name);
-    current = current.evolves_to[0];
+  const name = chainNode.species.name;
+  const next = chainNode.evolves_to || [];
+
+  if (!next.length) {
+    return [[name]];
   }
-  return evo;
+
+  const paths = [];
+  next.forEach((child) => {
+    const childPaths = extractEvolutionPaths(child);
+    childPaths.forEach((p) => paths.push([name, ...p]));
+  });
+  return paths;
+}
+
+function getUniqueEvolutionNames(paths) {
+  const set = new Set();
+  (paths || []).forEach((p) => (p || []).forEach((n) => set.add(n)));
+  return Array.from(set);
 }

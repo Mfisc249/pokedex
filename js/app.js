@@ -54,9 +54,30 @@ async function loadNextBatch() {
   }
 }
 
-async function loadPokemonDetails(items) {
-  const promises = items.map(i => fetchPokemonByUrl(i.url));
-  return Promise.all(promises);
+async function loadNextBaseForms(targetCount) {
+  const collected = [];
+
+  while (collected.length < targetCount) {
+    const list = await fetchPokemonList(state.limit, state.offset);
+    state.offset += state.limit;
+
+    if (!list.results || list.results.length === 0) break;
+
+    const details = await Promise.all(
+      list.results.map(async (item) => {
+        const data = await fetch PokemonByUrl(item.url);
+        const species = await fetchSpecies(p.id);
+        const isBaseForm = !species.evolves_from_species;
+        return isBaseForm ? p : null;
+      })  
+    );
+
+    details.filter(Boolean).forEach((p) => collected.push(p));
+
+    if (!list.next) break;
+  }
+
+  return collected.slice(0, targetCount);
 }
 
 function onCardClick(e) {
@@ -73,3 +94,4 @@ function setLoading(isLoading) {
   document.getElementById("loading").classList.toggle("hidden", !isLoading);
   document.getElementById("loadMoreBtn").disabled = isLoading;
 }
+

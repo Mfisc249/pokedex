@@ -11,36 +11,46 @@ function setMessage(text) {
 
 function renderPokemonCards(pokemonArr) {
   const grid = document.getElementById("cardGrid");
-  const html = pokemonArr.map(p => pokemonCardTemplate(p, getCardBgClass(p))).join("");
+  const html = pokemonArr
+    .map((p) => pokemonCardTemplate(p, getCardBgClass(p)))
+    .join("");
   grid.insertAdjacentHTML("beforeend", html);
 }
+
 
 function clearCards() {
   document.getElementById("cardGrid").innerHTML = "";
 }
 
 async function openOverlay(pokemon, state) {
-  const species = await fetchSpecies(pokemon.id);
-  const evoData = await fetchEvolutionChainForPokemon(pokemon.id);
+  const overlay = document.getElementById("overlay");
+  const activeTab = "about";
 
-  const evoChain = evoData
-    ? parseEvolutionChain(evoData.chain)
-    : [];
+  let species = null;
+  try {
+    species = await fetchSpecies(pokemon.id);
+  } catch {
+    species = null;
+  }
 
   const html = overlayTemplate(
     pokemon,
     getCardBgClass(pokemon),
-    statsTemplate(pokemon),
     aboutTemplate(pokemon),
-    evolutionTemplate(evoChain)
+    statsTemplate(pokemon),
+    genderTemplate(species),
+    evolutionPlaceholderTemplate(),
+    tabsTemplate(activeTab),
+    activeTab
   );
 
-  const overlay = document.getElementById("overlay");
   overlay.innerHTML = html;
   overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("no-scroll");
 
   attachOverlayEvents(state);
-  initTabs();
+  initTabs(pokemon);
 }
 
 function closeOverlay() {
@@ -48,63 +58,92 @@ function closeOverlay() {
   overlay.classList.add("hidden");
   overlay.setAttribute("aria-hidden", "true");
   overlay.innerHTML = "";
-  document.body.style.overflow = "";
+  document.body.classList.remove("no-scroll");
 }
+
+let overlayEventAttached = false;
 
 function attachOverlayEvents(state) {
   const overlay = document.getElementById("overlay");
-  overlay.addEventListener("click", e => onOverlayClick(e), { once:false });
-  overlay.addEventListener("click", e => onOverlayNav(e, state), { once:false });
+
+  // Remove old listeners if they exist
+  if (overlayEventAttached) {
+    overlay.replaceWith(overlay.cloneNode(true));
+  }
+  overlayEventAttached = true;
+
+  const newOverlay = document.getElementById("overlay");
+  
+  newOverlay.addEventListener("click", (e) => {
+    if (e.target.id === "overlay") closeOverlay();
+    if (e.target.dataset.close) closeOverlay();
+  });
+
+  newOverlay.addEventListener("click", (e) => {
+    const navBtn = e.target.closest("[data-nav]");
+    if (!navBtn) return;
+    
+    const dir = Number(navBtn.dataset.nav || 0);
+    if (!dir) return;
+    
+    const next = state.currentIndex + dir;
+    showOverlayByIndex(next, state);
+  });
 }
 
-function onOverlayClick(e) {
-  if (e.target.id === "overlay") closeOverlay();
-  if (e.target.dataset.close) closeOverlay();
+function initTabs(pokemon) {
+  const tabs = document.querySelectorAll(".tab");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const key = tab.dataset.tab;
+
+      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+
+      tab.classList.add("active");
+      document.getElementById("tab-" + key).classList.add("active");
+
+      if (key === "evolution") {
+        loadEvolutionTimeline(pokemon.id);
+      }
+    });
+  });
 }
 
-function onOverlayNav(e, state) {
-  const dir = Number(e.target.dataset.nav);
-  if (!dir) return;
-  const next = state.currentIndex + dir;
-  showOverlayByIndex(next, state);
+async function loadEvolutionTimeline(pokemonId) {
+  const timelineWrap = document.getElementById("evoTimeline");
+  const loading = document.getElementById("evoLoading");
+  if (!timelineWrap || !loading) return;
+  if (timelineWrap.dataset.loaded === "1") return;
+
+  loading.classList.remove("hidden");
+  timelineWrap.dataset.loaded = "1";
+
+  try {
+    const evo = await fetchEvolutionChainForPokemon(pokemonId);
+    const paths = evo ? extractEvolutionPaths(evo.chain) : [];
+    const uniqueNames = getUniqueEvolutionNames(paths);
+    const pokemons = await Promise.all(uniqueNames.map((n) => fetchPokemon(n)));
+
+    const pokemonByName = new Map();
+    pokemons.forEach((p) => pokemonByName.set(p.name, p));
+
+    const pokemonPaths = (paths || []).map((p) => p.map((name) => pokemonByName.get(name)).filter(Boolean));
+    timelineWrap.innerHTML = evolutionTimelineTemplate(pokemonPaths);
+  } catch {
+    timelineWrap.innerHTML = `<p class="tab-hint">Could not load evolution data.</p>`;
+  } finally {
+    loading.classList.add("hidden");
+  }
 }
 
-async function showOverlayByIndex(index, state) {
+function showOverlayByIndex(index, state) {
   const safe = clamp(index, 0, state.loadedPokemon.length - 1);
   state.currentIndex = safe;
   const p = state.loadedPokemon[safe];
-  await openOverlay(p, state);
+  openOverlay(p, state);
 }
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
-}
-
-function parseEvolutionChain(chain) {
-  const result = [];
-  let current = chain;
-  
-  while (current) {
-    const id = current.species.url.split("/").filter(Boolean).pop();
-    result.push({
-      name: current.species.name,
-      id: id
-    });
-    current = current.evolves_to[0];
-  }
-  
-  return result;
-}
-
-function initTabs() {
-  const tabs = document.querySelectorAll(".tab");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-
-      tab.classList.add("active");
-      document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
-    });
-  });
 }
