@@ -1,16 +1,16 @@
 @font-face {
   font-family: pocketMonk;
-  src: url(../Fonts/PocketMonk.ttf);
+  src: url(../assets/Fonts/PocketMonk.ttf);
 }
 
 @font-face {
   font-family: slumbersWeight;
-  src: url(../Fonts/SlumbersWeight.ttf);
+  src: url(../assets/Fonts/SlumbersWeight.ttf);
 }
 
 @font-face {
   font-family: moltors;
-  src: url(../Fonts/Moltors.ttf);
+  src: url(../assets/Fonts/Moltors.ttf);
 }
 
 :root{
