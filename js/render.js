@@ -25,6 +25,9 @@ async function openOverlay(pokemon, state) {
   const overlay = document.getElementById("overlay");
   const activeTab = "about";
 
+  const canPrev = state.currentIndex > 0;
+  const canNext = state.currentIndex < state.loadedPokemon.length - 1;
+
   let species = null;
   try {
     species = await fetchSpecies(pokemon.id);
@@ -40,7 +43,9 @@ async function openOverlay(pokemon, state) {
     genderTemplate(species),
     evolutionPlaceholderTemplate(),
     tabsTemplate(activeTab),
-    activeTab
+    activeTab,
+    canPrev,
+    canNext
   );
 
   overlay.innerHTML = html;
@@ -60,34 +65,24 @@ function closeOverlay() {
   document.body.classList.remove("no-scroll");
 }
 
-let overlayEventAttached = false;
-
 function attachOverlayEvents(state) {
   const overlay = document.getElementById("overlay");
 
-  // Remove old listeners if they exist
-  if (overlayEventAttached) {
-    overlay.replaceWith(overlay.cloneNode(true));
-  }
-  overlayEventAttached = true;
+  // Reset handler each time the overlay content is rebuilt.
+  overlay.onclick = (e) => {
+    if (e.target.id === "overlay" || e.target.dataset.close) {
+      closeOverlay();
+      return;
+    }
 
-  const newOverlay = document.getElementById("overlay");
-  
-  newOverlay.addEventListener("click", (e) => {
-    if (e.target.id === "overlay") closeOverlay();
-    if (e.target.dataset.close) closeOverlay();
-  });
-
-  newOverlay.addEventListener("click", (e) => {
     const navBtn = e.target.closest("[data-nav]");
-    if (!navBtn) return;
-    
+    if (!navBtn || navBtn.disabled) return;
+
     const dir = Number(navBtn.dataset.nav || 0);
     if (!dir) return;
-    
-    const next = state.currentIndex + dir;
-    showOverlayByIndex(next, state);
-  });
+
+    showOverlayByIndex(state.currentIndex + dir, state);
+  };
 }
 
 function initTabs(pokemon) {
@@ -122,18 +117,37 @@ async function loadEvolutionTimeline(pokemonId) {
     const evo = await fetchEvolutionChainForPokemon(pokemonId);
     const paths = evo ? extractEvolutionPaths(evo.chain) : [];
     const uniqueNames = getUniqueEvolutionNames(paths);
-    const pokemons = await Promise.all(uniqueNames.map((n) => fetchPokemon(n)));
+    const pokemons = await Promise.all(uniqueNames.map((name) => fetchPokemon(name)));
 
-    const pokemonByName = new Map();
-    pokemons.forEach((p) => pokemonByName.set(p.name, p));
-
+    const pokemonByName = new Map(pokemons.map((p) => [p.name, p]));
     const pokemonPaths = (paths || []).map((p) => p.map((name) => pokemonByName.get(name)).filter(Boolean));
-    timelineWrap.innerHTML = evolutionTimelineTemplate(pokemonPaths);
+
+    const view = buildEvolutionViewModel(pokemonPaths);
+    timelineWrap.innerHTML = evolutionTimelineTemplate(view.root, view.branches, view.maxLen);
   } catch {
     timelineWrap.innerHTML = `<p class="tab-hint">Could not load evolution data.</p>`;
   } finally {
     loading.classList.add("hidden");
   }
+}
+
+function buildEvolutionViewModel(pokemonPaths) {
+  if (!pokemonPaths || !pokemonPaths.length) {
+    return { root: null, branches: [], maxLen: 0 };
+  }
+
+  const root = pokemonPaths[0]?.[0] || null;
+  if (!root) return { root: null, branches: [], maxLen: 0 };
+
+  const branches = pokemonPaths.map((path) => removeRootFromPath(path, root));
+  const maxLen = Math.max(1, ...branches.map((p) => p.length));
+  return { root, branches, maxLen };
+}
+
+function removeRootFromPath(path, root) {
+  const arr = Array.isArray(path) ? [...path] : [];
+  while (arr.length && arr[0]?.id === root.id) arr.shift();
+  return arr;
 }
 
 function showOverlayByIndex(index, state) {

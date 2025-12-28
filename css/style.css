@@ -400,6 +400,9 @@ body{
 
 .tab-content{
   padding: 8px 14px 72px;
+  flex: 1;                       
+  overflow-y: auto;               
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab-panel{ display:none; }
@@ -455,6 +458,11 @@ body{
 .nav-btn span{
   font-size: 22px;
   font-weight: 900;
+}
+
+.nav-btn:disabled{
+  opacity: .35;
+  cursor: not-allowed;
 }
 
 /* Loading overlay */
@@ -532,6 +540,12 @@ body{
   cursor:pointer;
   font-weight: 700;
 }
+.poke-modal{
+  max-height: 92vh;               
+  display: flex;
+  flex-direction: column;
+}
+
 
 /* Evolution tab */
 .evo-loading{
@@ -552,11 +566,14 @@ body{
   animation: spin 1s linear infinite;
 }
 .evo-timeline{
-  margin-top: 12px;
   display:flex;
   align-items:center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;              
+  overflow-x: auto;               
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
 }
 
 /* Branching evolution layout (multiple rows / paths) */
@@ -581,7 +598,11 @@ body{
   display:flex;
   align-items:center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;              
+  overflow-x: auto;               
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
 }
 .evo-branch-arrow{
   font-size: 18px;
@@ -589,6 +610,9 @@ body{
   color: rgba(0,0,0,.35);
   width: 26px;
   text-align:center;
+}
+.evo-item{
+  flex: 0 0 auto;
 }
 .evo-spacer{
   width: 92px;
@@ -611,9 +635,14 @@ body{
 .evo-empty{ color:#666; }
 
 @media (max-width: 420px){
-  .tabs{ flex-wrap: wrap; }
-  .tab{ flex: 0 0 auto; }
-  .shiny-grid{ grid-template-columns: 1fr; }
+  .tabs{
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab{
+    flex: 0 0 auto;
+  }
 }
 @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
 

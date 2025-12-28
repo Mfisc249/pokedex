@@ -28,17 +28,28 @@ function pokemonCardTemplate(pokemon, bgClass) {
   `;
 }
 
-function overlayTemplate(pokemon, bgClass, aboutHtml, statsHtml, genderHtml, evolutionHtml, tabsHtml, activeTab) {
+function overlayTemplate(
+  pokemon,
+  bgClass,
+  aboutHtml,
+  statsHtml,
+  genderHtml,
+  evolutionHtml,
+  tabsHtml,
+  activeTab,
+  canPrev,
+  canNext
+) {
   const types = pokemon.types.map((t) => t.type.name);
   const img = getPokemonImage(pokemon);
   const id = String(pokemon.id).padStart(3, "0");
 
   return `
     <div class="poke-modal ${bgClass}">
-      <button class="nav-btn nav-left" data-nav="-1" aria-label="Previous">
+      <button class="nav-btn nav-left" data-nav="-1" aria-label="Previous" ${canPrev ? "" : "disabled"}>
         <span>←</span>
       </button>
-      <button class="nav-btn nav-right" data-nav="1" aria-label="Next">
+      <button class="nav-btn nav-right" data-nav="1" aria-label="Next" ${canNext ? "" : "disabled"}>
         <span>→</span>
       </button>
 
@@ -153,87 +164,51 @@ function evolutionPlaceholderTemplate() {
   `;
 }
 
-function evolutionTimelineTemplate(pokemonPaths) {
-  // pokemonPaths is an array of arrays (paths). Example for Eevee:
-  // [[eevee,vaporeon],[eevee,jolteon],...]
-  if (!pokemonPaths || !pokemonPaths.length) {
-    return `<p class="evo-empty">No evolution data.</p>`;
-  }
+function evolutionTimelineTemplate(root, branchPaths, maxLen) {
+  if (!root) return `<p class="evo-empty">No evolution data.</p>`;
 
-  // Show the root only once (e.g. Eevee) and render all branches below.
-  // Some chains can accidentally include the root multiple times per path.
-  // We remove any leading root entries from each path so the root is truly only rendered once.
-  const root = pokemonPaths[0]?.[0] || null;
-  const rootId = root?.id ?? null;
+  const rootImg = getPokemonImage(root) || root.sprites?.front_default || "";
+  const rootId = String(root.id).padStart(3, "0");
 
-  const branchPaths = (pokemonPaths || []).map((path) => {
-    const p = Array.isArray(path) ? [...path] : [];
-    // remove leading root objects (usually 1, but be defensive)
-    while (p.length && rootId && p[0]?.id === rootId) {
-      p.shift();
-    }
-    // If the first entry is still the same as root by name (fallback)
-    while (p.length && !rootId && root?.name && p[0]?.name === root.name) {
-      p.shift();
-    }
-    return p;
-  });
-  const maxLen = Math.max(1, ...branchPaths.map((p) => p.length));
+  const rootHtml = `
+    <div class="evo-root">
+      <div class="evo-item evo-root-item" data-evo-id="${root.id}" title="Open ${formatName(root.name)}">
+        <img src="${rootImg}" alt="${root.name}" loading="lazy" />
+        <div class="evo-name">${formatName(root.name)}</div>
+        <div class="evo-id">#${rootId}</div>
+      </div>
+    </div>
+  `;
 
-  const rootHtml = root
-    ? (() => {
-        const img = getPokemonImage(root) || root.sprites?.front_default || "";
-        const id = String(root.id).padStart(3, "0");
-        return `
-          <div class="evo-root">
-            <div class="evo-item evo-root-item" data-evo-id="${root.id}" title="Open ${formatName(root.name)}">
-              <img src="${img}" alt="${root.name}" loading="lazy" />
-              <div class="evo-name">${formatName(root.name)}</div>
-              <div class="evo-id">#${id}</div>
-            </div>
-          </div>
-        `;
-      })()
-    : "";
+  const rows = (branchPaths || []).map((path) => {
+    const cells = [`<div class="evo-branch-arrow" aria-hidden="true">↳</div>`];
 
-  const rows = branchPaths
-    .map((path) => {
-      const cells = [];
-
-      // visual cue from root -> first branch element
-      cells.push(`<div class="evo-branch-arrow" aria-hidden="true">↳</div>`);
-
-      for (let i = 0; i < maxLen; i++) {
-        const p = path[i];
-        if (i > 0) {
-          cells.push(`<div class="evo-arrow" aria-hidden="true">→</div>`);
-        }
-
-        if (!p) {
-          cells.push(`<div class="evo-spacer"></div>`);
-          continue;
-        }
-
-        const img = getPokemonImage(p) || p.sprites?.front_default || "";
-        const id = String(p.id).padStart(3, "0");
-        cells.push(`
-          <div class="evo-item" data-evo-id="${p.id}" title="Open ${formatName(p.name)}">
-            <img src="${img}" alt="${p.name}" loading="lazy" />
-            <div class="evo-name">${formatName(p.name)}</div>
-            <div class="evo-id">#${id}</div>
-          </div>
-        `);
+    for (let i = 0; i < maxLen; i++) {
+      const p = path[i];
+      if (i > 0) cells.push(`<div class="evo-arrow" aria-hidden="true">→</div>`);
+      if (!p) {
+        cells.push(`<div class="evo-spacer"></div>`);
+        continue;
       }
 
-      return `<div class="evo-row">${cells.join("")}</div>`;
-    })
-    .join("");
+      const img = getPokemonImage(p) || p.sprites?.front_default || "";
+      const id = String(p.id).padStart(3, "0");
+      cells.push(`
+        <div class="evo-item" data-evo-id="${p.id}" title="Open ${formatName(p.name)}">
+          <img src="${img}" alt="${p.name}" loading="lazy" />
+          <div class="evo-name">${formatName(p.name)}</div>
+          <div class="evo-id">#${id}</div>
+        </div>
+      `);
+    }
+
+    return `<div class="evo-row">${cells.join("")}</div>`;
+  }).join("");
 
   return `
     <div class="evo-branches" data-cols="${maxLen}">
       ${rootHtml}
       ${rows}
-      <p class="tab-hint evo-hint">Tip: chains can branch (e.g. Eevee). Each row shows one possible path.</p>
     </div>
   `;
 }

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/colors.css" />
 </head>
-<body>
+<body onload="init()">
   <header class="site-header">
     <div class="content-container header-inner">
       <div class="brand">
@@ -29,7 +29,7 @@
     <section id="cardGrid" class="grid" aria-label="Pokemon list"></section>
 
     <div class="load-more-wrap">
-      <button id="loadMoreBtn" class="load-more">Load more</button>
+      <button id="loadMoreBtn" class="load-more" onclick="loadNextBatch()">Load more</button>
     </div>
   </main>
 
