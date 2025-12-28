@@ -17,7 +17,6 @@ function renderPokemonCards(pokemonArr) {
   grid.insertAdjacentHTML("beforeend", html);
 }
 
-
 function clearCards() {
   document.getElementById("cardGrid").innerHTML = "";
 }

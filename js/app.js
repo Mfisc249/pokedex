@@ -41,19 +41,21 @@ function runSearch(query) {
 async function loadNextBatch() {
   setLoading(true);
   try {
-    const list = await fetchPokemonList(state.limit, state.offset);
-    const batch = await loadPokemonDetails(list.results);
+    const batch = await loadNextBaseForms(state.limit);
     state.loadedPokemon.push(...batch);
-    state.offset += state.limit;
     renderPokemonCards(batch);
     setMessage("");
-  } catch {
+  } catch (err) {
     setMessage("Loading failed. Please try again.");
   } finally {
     setLoading(false);
   }
 }
 
+/**
+ * Loads the next `targetCount` base-form Pokémon (no evolves_from_species) from the API list.
+ * We may need to fetch more than `targetCount` entries because we skip evolution stages.
+ */
 async function loadNextBaseForms(targetCount) {
   const collected = [];
 
@@ -65,18 +67,20 @@ async function loadNextBaseForms(targetCount) {
 
     const details = await Promise.all(
       list.results.map(async (item) => {
-        const data = await fetch PokemonByUrl(item.url);
+        const p = await fetchPokemonByUrl(item.url);
         const species = await fetchSpecies(p.id);
         const isBaseForm = !species.evolves_from_species;
         return isBaseForm ? p : null;
-      })  
+      })
     );
 
     details.filter(Boolean).forEach((p) => collected.push(p));
 
+    // stop if API ended
     if (!list.next) break;
   }
 
+  // Trim in case we collected a bit more
   return collected.slice(0, targetCount);
 }
 
@@ -94,4 +98,3 @@ function setLoading(isLoading) {
   document.getElementById("loading").classList.toggle("hidden", !isLoading);
   document.getElementById("loadMoreBtn").disabled = isLoading;
 }
-

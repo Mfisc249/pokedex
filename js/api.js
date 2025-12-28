@@ -51,6 +51,8 @@ async function fetchEvolutionChainForPokemon(id) {
   return data;
 }
 
+// Returns ALL evolution paths (supports branching chains like Eevee).
+// Output example: [["eevee","vaporeon"],["eevee","jolteon"],...]
 function extractEvolutionPaths(chainNode) {
   if (!chainNode || !chainNode.species) return [];
 

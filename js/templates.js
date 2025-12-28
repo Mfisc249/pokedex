@@ -154,22 +154,25 @@ function evolutionPlaceholderTemplate() {
 }
 
 function evolutionTimelineTemplate(pokemonPaths) {
- 
+  // pokemonPaths is an array of arrays (paths). Example for Eevee:
+  // [[eevee,vaporeon],[eevee,jolteon],...]
   if (!pokemonPaths || !pokemonPaths.length) {
     return `<p class="evo-empty">No evolution data.</p>`;
   }
 
-  
+  // Show the root only once (e.g. Eevee) and render all branches below.
+  // Some chains can accidentally include the root multiple times per path.
+  // We remove any leading root entries from each path so the root is truly only rendered once.
   const root = pokemonPaths[0]?.[0] || null;
   const rootId = root?.id ?? null;
 
   const branchPaths = (pokemonPaths || []).map((path) => {
     const p = Array.isArray(path) ? [...path] : [];
-   
+    // remove leading root objects (usually 1, but be defensive)
     while (p.length && rootId && p[0]?.id === rootId) {
       p.shift();
     }
-    
+    // If the first entry is still the same as root by name (fallback)
     while (p.length && !rootId && root?.name && p[0]?.name === root.name) {
       p.shift();
     }
@@ -197,7 +200,7 @@ function evolutionTimelineTemplate(pokemonPaths) {
     .map((path) => {
       const cells = [];
 
-     
+      // visual cue from root -> first branch element
       cells.push(`<div class="evo-branch-arrow" aria-hidden="true">↳</div>`);
 
       for (let i = 0; i < maxLen; i++) {

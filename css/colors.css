@@ -17,3 +17,23 @@
 .bg-dark { background: #1b1b1f; }
 .bg-steel { background: #2b3138; }
 .bg-fairy { background: #3a1a2b; }
+
+/* Type icon backgrounds (same colors) */
+.normal { background: #2a2f45; }
+.fire { background: #3a1f1f; }
+.water { background: #16263f; }
+.electric { background: #3b3216; }
+.grass { background: #16331f; }
+.ice { background: #1c3540; }
+.fighting { background: #3a1f2b; }
+.poison { background: #2d1d3b; }
+.ground { background: #3a2d1a; }
+.flying { background: #1f2f3a; }
+.psychic { background: #3a1a33; }
+.bug { background: #26331a; }
+.rock { background: #2f2b2b; }
+.ghost { background: #211a33; }
+.dragon { background: #1a2540; }
+.dark { background: #1b1b1f; }
+.steel { background: #2b3138; }
+.fairy { background: #3a1a2b; }
