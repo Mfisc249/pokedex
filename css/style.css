@@ -575,8 +575,8 @@ body{
   display:flex;
   align-items:center;
   gap: 10px;
-  flex-wrap: nowrap;              
-  overflow-x: auto;               
+  flex-wrap: nowrap;
+  overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 6px;
@@ -590,16 +590,14 @@ body{
 }
 .evo-item{
   flex: 0 0 auto;
+  text-align:center;
+  min-width: 92px;
 }
 .evo-spacer{
   width: 92px;
   height: 1px;
 }
 .evo-hint{ margin-top: 6px; }
-.evo-item{
-  text-align:center;
-  min-width: 92px;
-}
 .evo-item img{
   width: 86px;
   height: 86px;

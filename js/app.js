@@ -20,7 +20,6 @@ function onSearchInput(e) {
   const query = e.target.value.trim();
   document.getElementById("searchBtn").disabled = query.length < 3;
 
-  // If the input gets cleared, return to the default list.
   if (query.length === 0) {
     setMessage("");
     clearCards();
@@ -36,24 +35,33 @@ async function onSearchSubmit(e) {
 }
 
 async function runSearch(query) {
-  const localHits = state.loadedPokemon.filter((p) => p.name.includes(query));
-  if (localHits.length) {
-    clearCards();
-    setMessage("");
-    renderPokemonCards(localHits);
-    return;
-  }
+  const localHits = findLocalMatches(query);
+  if (localHits.length) return renderSearchResults(localHits);
+  await fetchAndRenderSearch(query);
+}
 
-  // If it's not in the currently loaded list, try fetching it directly via API.
+function findLocalMatches(query) {
+  return state.loadedPokemon.filter((p) => p.name.includes(query));
+}
+
+function renderSearchResults(list) {
+  clearCards();
+  setMessage("");
+  renderPokemonCards(list);
+}
+
+function renderSearchError() {
+  clearCards();
+  setMessage("No Pokémon found.");
+}
+
+async function fetchAndRenderSearch(query) {
   setLoading(true);
   try {
     const pokemon = await fetchPokemon(query);
-    clearCards();
-    setMessage("");
-    renderPokemonCards([pokemon]);
+    renderSearchResults([pokemon]);
   } catch {
-    clearCards();
-    setMessage("No Pokémon found.");
+    renderSearchError();
   } finally {
     setLoading(false);
   }
