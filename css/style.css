@@ -79,11 +79,12 @@ body{
   flex: 1 1 auto;
   justify-content: flex-end;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .search-input{
   flex: 1 1 140px;
-  min-width: 140px;
+  min-width: 0;
   max-width: 360px;
   padding: 10px 14px;
   border-radius: 999px;
@@ -359,9 +360,9 @@ body{
 
 .modal-pokeball{
   position:absolute;
-  right: -40px;
+  right: -10px;
   top: -20px;
-  width: 260px;
+  width: 220px;
   opacity: .18;
   z-index: 1;
 }
@@ -516,30 +517,6 @@ body{
   font-size: 13px;
 }
 
-/* Shiny tab */
-.shiny-wrap{ display:flex; flex-direction:column; gap: 12px; }
-.shiny-grid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.shiny-card{
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 10px;
-  background: rgba(0,0,0,.02);
-}
-.shiny-label{ font-weight: 800; margin-bottom: 6px; }
-.shiny-img{ width: 100%; height: 130px; object-fit: contain; }
-.shiny-toggle{
-  align-self: flex-start;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,.18);
-  background: white;
-  cursor:pointer;
-  font-weight: 700;
-}
 .poke-modal{
   max-height: 92vh;               
   display: flex;
@@ -634,6 +611,8 @@ body{
 .evo-branch-arrow{ font-size: 18px; font-weight: 900; color: rgba(0,0,0,.35); }
 .evo-empty{ color:#666; }
 
+
+/* Responsive */
 @media (max-width: 420px){
   .tabs{
     flex-wrap: nowrap;
@@ -646,11 +625,20 @@ body{
 }
 @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
 
-/* Responsive */
 @media (max-width: 360px){
   .header-inner{ flex-direction: column; align-items: stretch; }
   .search-input{ width: 100%; }
   .brand-title{ font-size: 24px; }
   .card{ width: 180px; height: 300px; }
   .image{ width: 115px; height: 115px; }
+}
+@media (max-width: 360px){
+  .tab-content{
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .evo-item{
+    min-width: 80px;  
+  }
 }
