@@ -2,8 +2,13 @@ const state = {
   limit: 25,
   offset: 0,
   loadedPokemon: [],
-  currentIndex: 0
+  currentIndex: 0,
+  isSearching: false
 };
+
+function setLoadMoreVisible(isVisible) {
+  document.querySelector(".load-more-wrap").classList.toggle("hidden", !isVisible);
+} 
 
 function init() {
   wireEvents();
@@ -21,6 +26,9 @@ function onSearchInput(e) {
   document.getElementById("searchBtn").disabled = query.length < 3;
 
   if (query.length === 0) {
+    state.isSearching = false;
+    setLoadMoreVisible(true);
+
     setMessage("");
     clearCards();
     renderPokemonCards(state.loadedPokemon);
@@ -35,10 +43,15 @@ async function onSearchSubmit(e) {
 }
 
 async function runSearch(query) {
+  state.isSearching = true;
+  setLoadMoreVisible(false);
+
   const localHits = findLocalMatches(query);
   if (localHits.length) return renderSearchResults(localHits);
+
   await fetchAndRenderSearch(query);
 }
+
 
 function findLocalMatches(query) {
   return state.loadedPokemon.filter((p) => p.name.includes(query));
@@ -68,6 +81,7 @@ async function fetchAndRenderSearch(query) {
 }
 
 async function loadNextBatch() {
+  if (state.isSearching) return;
   setLoading(true);
   try {
     const batch = await loadPokemonBatch(state.limit, state.offset);
@@ -102,3 +116,5 @@ function setLoading(isLoading) {
   document.getElementById("loading").classList.toggle("hidden", !isLoading);
   document.getElementById("loadMoreBtn").disabled = isLoading;
 }
+
+window.addEventListener("DOMContentLoaded", init);

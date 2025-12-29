@@ -11,7 +11,10 @@ function setMessage(text) {
 
 function renderPokemonCards(pokemonArr) {
   const grid = document.getElementById("cardGrid");
-  const html = pokemonArr.map((p) => pokemonCardTemplate(p, getCardBgClass(p))).join("");
+  const html = pokemonArr.map((p) => {
+  const vm = buildCardVm(p);
+  return pokemonCardTemplate(vm);
+}).join("");
   grid.insertAdjacentHTML("beforeend", html);
 }
 
@@ -97,21 +100,12 @@ async function fetchSpeciesSafe(id) {
   }
 }
 
-function buildOverlayHtml(pokemon, species, activeTab, state) {
-  const nav = navState(state);
-  return overlayTemplate(
-    pokemon,
-    getCardBgClass(pokemon),
-    aboutTemplate(pokemon),
-    statsTemplate(pokemon),
-    genderTemplate(species),
-    evolutionPlaceholderTemplate(),
-    tabsTemplate(activeTab),
-    activeTab,
-    nav.canPrev,
-    nav.canNext
-  );
+
+  function buildOverlayHtml(pokemon, species, activeTab, state) {
+  const vm = buildOverlayVm(pokemon, species, activeTab, state);
+  return overlayTemplate(vm);
 }
+
 
 function navState(state) {
   return {
@@ -184,12 +178,154 @@ function mapPathsToPokemon(paths, pokemons) {
 }
 
 function renderEvolution(view, ctx) {
-  const html = view
-    ? evolutionTimelineTemplate(view.root, view.branches, view.maxLen)
-    : `<p class="tab-hint">Could not load evolution data.</p>`;
-  ctx.timeline.innerHTML = html;
+  if (!view) {
+    ctx.timeline.innerHTML = `<p class="tab-hint">Could not load evolution data.</p>`;
+    return;
+  }
+
+  const rootVm = buildEvoItemVm(view.root, "evo-root-item");
+  const rootHtml = evoRootWrapTemplate(evoItemTemplate(rootVm));
+
+  const rowsHtml = (view.branches || []).map(path => buildEvoRowHtml(path, view.maxLen)).join("");
+  ctx.timeline.innerHTML = evoBranchesTemplate(rootHtml, rowsHtml, view.maxLen);
+}
+
+function buildEvoRowHtml(path, maxLen) {
+  let cells = evoBranchArrowTemplate();
+
+  for (let i = 0; i < maxLen; i++) {
+    if (i > 0) cells += evoArrowTemplate();
+
+    const p = path[i];
+    if (!p) cells += evoSpacerTemplate();
+    else cells += evoItemTemplate(buildEvoItemVm(p));
+  }
+
+  return evoRowTemplate(cells);
+}
+
+function buildEvoItemVm(pokemon, extraClass) {
+  return {
+    id: pokemon.id,
+    idPadded: padId(pokemon.id),
+    name: pokemon.name,
+    nameFormatted: formatName(pokemon.name),
+    img: getPokemonImage(pokemon) || pokemon.sprites?.front_default || "",
+    title: `Open ${formatName(pokemon.name)}`,
+    extraClass: extraClass || ""
+  };
 }
 
 function stopEvoLoading(ctx) {
   ctx.loading.classList.add("hidden");
+}
+
+function buildCardVm(pokemon) {
+  const types = (pokemon.types || []).map(t => t.type.name);
+  const typesHtml = types.map(typeBadgeTemplate).join("");
+
+  return {
+    id: pokemon.id,
+    idPadded: padId(pokemon.id),
+    name: pokemon.name,
+    nameFormatted: formatName(pokemon.name),
+    img: getPokemonImage(pokemon),
+    bgClass: getCardBgClass(pokemon),
+    typesHtml
+  };
+}
+
+function buildOverlayVm(pokemon, species, activeTab, state) {
+  const types = (pokemon.types || []).map(t => t.type.name);
+  const typePillsHtml = types.map(typePillTemplate).join("");
+
+  const aboutHtml = buildAboutHtml(pokemon);
+  const statsHtml = buildStatsHtml(pokemon);
+  const genderHtml = buildGenderHtml(species);
+  const evolutionHtml = evolutionPlaceholderTemplate();
+
+  const nav = navState(state);
+  const navHtml = overlayNavButtonsTemplate(nav.canPrev, nav.canNext);
+
+  return {
+    id: pokemon.id,
+    idPadded: padId(pokemon.id),
+    name: pokemon.name,
+    nameFormatted: formatName(pokemon.name),
+    img: getPokemonImage(pokemon),
+    bgClass: getCardBgClass(pokemon),
+
+    typePillsHtml,
+    navHtml,
+
+    tabsHtml: tabsTemplate(activeTab),
+    activeTab,
+
+    aboutHtml,
+    statsHtml,
+    genderHtml,
+    evolutionHtml
+  };
+}
+
+
+function buildAboutHtml(pokemon) {
+  const abilities = (pokemon.abilities || [])
+    .map(a => formatName(a.ability.name))
+    .join(", ");
+
+  const rowsHtml = [
+    aboutRowTemplate("Species", formatName(pokemon.name)),
+    aboutRowTemplate("Height", `${pokemon.height * 10} cm`),
+    aboutRowTemplate("Weight", `${(pokemon.weight / 10).toFixed(1)} kg`),
+    aboutRowTemplate("Abilities", abilities || "-")
+  ].join("");
+
+  return aboutGridTemplate(rowsHtml);
+}
+
+function buildStatsHtml(pokemon) {
+  const rowsHtml = (pokemon.stats || []).map(s => {
+    return statsRowTemplate(formatName(s.stat.name), String(s.base_stat));
+  }).join("");
+
+  return statsListTemplate(rowsHtml);
+}
+
+function buildGenderHtml(species) {
+  if (!species) return `<p class="tab-hint">No gender data available.</p>`;
+
+  const genderText = formatGenderRate(species);
+  const genderDiff = species.has_gender_differences ? "Yes" : "No";
+  const eggGroups = ((species.egg_groups || []).map(g => formatName(g.name)).join(", ")) || "-";
+
+  const rowsHtml = [
+    aboutRowTemplate("Gender rate", genderText),
+    aboutRowTemplate("Gender differences", genderDiff),
+    aboutRowTemplate("Egg groups", eggGroups)
+  ].join("");
+
+  return aboutGridTemplate(rowsHtml);
+}
+
+
+function formatGenderRate(species) {
+  if (species.gender_rate === -1) return "Genderless";
+  if (typeof species.gender_rate !== "number") return "Unknown";
+  const female = Math.round((species.gender_rate / 8) * 100);
+  const male = 100 - female;
+  return `${female}% female / ${male}% male`;
+}
+
+function formatName(name) {
+  return name.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+}
+
+function padId(id) {
+  return String(id).padStart(3, "0");
+}
+
+function getPokemonImage(pokemon) {
+  const spr = pokemon.sprites;
+  return spr.other?.["official-artwork"]?.front_default || spr.front_default || "";
 }
